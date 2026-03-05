@@ -1,4 +1,4 @@
-# MEDICAL-DIAGNOSIS--Domain-Specific-RAG
+# MEDICAL-DIAGNOSIS-Domain-Specific-RAG
 
 Domain-Specific RAG: Master the art of tuning RAG systems for verticals where accuracy is non-negotiable (Healthcare, Law).
 
