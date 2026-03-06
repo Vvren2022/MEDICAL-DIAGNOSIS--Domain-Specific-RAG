@@ -23,3 +23,5 @@ Trustworthy UI Design: Build interfaces designed for professional decision suppo
 # 3. Privacy & Interface
       Data Anonymisation: Implementing a pre-processing layer that detects and redacts names, dates, and IDs from patient data before it hits the LLM, ensuring privacy by design.
       Clinician Dashboard: Building a Streamlit interface that presents the diagnosis alongside a "Confidence Score" and a "Source Pane" allowing doctors to verify the AI's logic instantly.
+      
+<img width="1656" height="751" alt="image" src="https://github.com/user-attachments/assets/5853e20d-b05f-464e-af30-0400216ea528" />
