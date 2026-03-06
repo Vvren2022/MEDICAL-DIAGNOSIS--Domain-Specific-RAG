@@ -1,0 +1,28 @@
+1. Learning Outcome:
+   - Build an AI-powered medical assistant using Large Language Models (LLMs).
+   - Integrate OpenAI's GPT-4 for symptom analysis and medical diagnosis.
+   - Master the Model Context Protocol (MCP) for building agentic tools.
+   - Implement real-time web scraping with BeautifulSoup to fetch medical research from PubMed.
+   - Develop a robust API using FastAPI to serve diagnostic predictions.
+   - Learn prompt engineering techniques for medical summarization and diagnosis.
+
+2. What you will build:
+   - A sophisticated "Medical Diagnosis & Research Assistant" capable of analyzing user symptoms.
+   - A Symptom Extraction engine that parses natural language to identify key medical conditions.
+   - An automated PubMed Research tool that fetches and parses the latest medical studies.
+   - A Diagnosis & Summarization pipeline that combines clinical insights with academic research.
+   - An MCP Server implementation to expose these capabilities to AI agents.
+
+3. Prerequisite:
+   - Proficiency in Python programming.
+   - Basic understanding of RESTful APIs and HTTP requests.
+   - Familiarity with regex and web scraping concepts is helpful.
+   - An OpenAI API key is required.
+
+4. Technologies:
+   - Programming Language: Python
+   - Web Framework: FastAPI
+   - AI Protocol: Model Context Protocol (FastMCP)
+   - LLM Integration: OpenAI API (GPT-4)
+   - Web Scraping: BeautifulSoup4, LXML, Requests
+   - Utilities: Python-dotenv, Uvicorn, Regex

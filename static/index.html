@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CliniSight AI — Medical Diagnosis Assistant</title>
+    <style>
+        /* ── Reset & Base ─────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg:        #f0f4f8;
+            --surface:   #ffffff;
+            --primary:   #1a73e8;
+            --primary-d: #1558b0;
+            --accent:    #34a853;
+            --danger:    #ea4335;
+            --text:      #202124;
+            --muted:     #5f6368;
+            --border:    #dadce0;
+            --radius:    12px;
+            --shadow:    0 2px 8px rgba(0,0,0,.08);
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ── Header ───────────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: #fff;
+            padding: 28px 0;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,.15);
+        }
+        header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -.5px; }
+        header p  { font-size: .95rem; opacity: .85; margin-top: 4px; }
+
+        /* ── Layout ───────────────────────────────────────── */
+        .container { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+
+        /* ── Input Card ───────────────────────────────────── */
+        .input-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px 32px;
+            margin-bottom: 32px;
+        }
+        .input-card label {
+            display: block;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .input-card textarea {
+            width: 100%;
+            min-height: 120px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: .95rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color .2s;
+        }
+        .input-card textarea:focus { outline: none; border-color: var(--primary); }
+        .input-card .hint {
+            font-size: .82rem;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        /* ── Button ───────────────────────────────────────── */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 18px;
+            padding: 12px 32px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s, transform .1s;
+        }
+        .btn-primary:hover { background: var(--primary-d); }
+        .btn-primary:active { transform: scale(.97); }
+        .btn-primary:disabled {
+            background: #93b5e0;
+            cursor: not-allowed;
+        }
+
+        /* ── Spinner ──────────────────────────────────────── */
+        .spinner {
+            display: none;
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading .spinner { display: inline-block; }
+        .loading .btn-text { display: none; }
+
+        /* ── Progress Bar ─────────────────────────────────── */
+        .progress-container {
+            display: none;
+            margin-top: 16px;
+        }
+        .progress-container.active { display: block; }
+        .progress-bar-bg {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 3px;
+            width: 0%;
+            transition: width .4s ease;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: .82rem;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        /* ── Error ────────────────────────────────────────── */
+        .error-banner {
+            display: none;
+            background: #fce8e6;
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            font-size: .92rem;
+        }
+        .error-banner.visible { display: block; }
+
+        /* ── Results Section ──────────────────────────────── */
+        #results { display: none; }
+        #results.visible { display: block; }
+
+        .result-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            overflow: hidden;
+            animation: fadeUp .4s ease both;
+        }
+        .result-card:nth-child(2) { animation-delay: .08s; }
+        .result-card:nth-child(3) { animation-delay: .16s; }
+        .result-card:nth-child(4) { animation-delay: .24s; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            padding: 16px 24px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-header .icon { font-size: 1.3rem; }
+        .card-body { padding: 0 24px 24px; }
+
+        /* ── Symptom Pills ────────────────────────────────── */
+        .symptoms-header { background: #e8f0fe; color: #1a56c4; }
+        .pill-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pill {
+            background: #e8f0fe;
+            color: #1a56c4;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: .88rem;
+            font-weight: 500;
+        }
+
+        /* ── Diagnosis ────────────────────────────────────── */
+        .diagnosis-header { background: #fef7e0; color: #b06d00; }
+        .diagnosis-content {
+            white-space: pre-wrap;
+            font-size: .92rem;
+            line-height: 1.75;
+        }
+        .diagnosis-content strong, .diagnosis-content b {
+            color: var(--text);
+        }
+
+        /* ── PubMed Articles ──────────────────────────────── */
+        .pubmed-header { background: #e6f4ea; color: #1e7e34; }
+        .article-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            transition: box-shadow .2s;
+        }
+        .article-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+        .article-item:last-child { margin-bottom: 0; }
+        .article-title {
+            font-weight: 600;
+            font-size: .95rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .article-title:hover { text-decoration: underline; }
+        .article-meta {
+            font-size: .82rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .article-meta span { margin-right: 16px; }
+        .article-abstract {
+            font-size: .88rem;
+            color: #3c4043;
+            line-height: 1.6;
+        }
+        .article-abstract.collapsed {
+            max-height: 80px;
+            overflow: hidden;
+            position: relative;
+        }
+        .article-abstract.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, var(--surface));
+        }
+        .toggle-abstract {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: .84rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 4px;
+            padding: 0;
+        }
+
+        /* ── Summary ──────────────────────────────────────── */
+        .summary-header { background: #f3e8fd; color: #7627bb; }
+        .summary-content {
+            white-space: pre-wrap;
+            font-size: .92rem;
+            line-height: 1.75;
+        }
+
+        /* ── No-articles fallback ─────────────────────────── */
+        .no-data {
+            text-align: center;
+            color: var(--muted);
+            padding: 16px;
+            font-style: italic;
+        }
+
+        /* ── Footer ───────────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 24px 0;
+            font-size: .8rem;
+            color: var(--muted);
+        }
+
+        /* ── Responsive ───────────────────────────────────── */
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.4rem; }
+            .input-card, .card-body { padding-left: 16px; padding-right: 16px; }
+            .card-header { padding-left: 16px; padding-right: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>&#x1F3E5; CliniSight AI</h1>
+    <p>AI-Powered Medical Diagnosis Assistant</p>
+</header>
+
+<div class="container">
+
+    <!-- ── Input ──────────────────────────────────────── -->
+    <div class="input-card">
+        <label for="symptomInput">Describe the patient's symptoms</label>
+        <textarea id="symptomInput" placeholder="e.g. Patient presents with persistent dry cough for 2 weeks, mild fever in the evenings, night sweats, and unintentional weight loss of 4 kg over the past month."></textarea>
+        <p class="hint">Provide as much clinical detail as possible for the best results. Include duration, severity, and any relevant history.</p>
+        <button class="btn-primary" id="submitBtn" onclick="submitDiagnosis()">
+            <span class="btn-text">&#x1F50D; Analyze Symptoms</span>
+            <span class="spinner"></span>
+        </button>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">Initializing...</p>
+        </div>
+    </div>
+
+    <!-- ── Error ──────────────────────────────────────── -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- ── Results ─────────────────────────────────────── -->
+    <div id="results">
+
+        <!-- Extracted Symptoms -->
+        <div class="result-card">
+            <div class="card-header symptoms-header">
+                <span class="icon">&#x1F9EA;</span> Extracted Symptoms
+            </div>
+            <div class="card-body">
+                <div class="pill-list" id="symptomPills"></div>
+            </div>
+        </div>
+
+        <!-- Differential Diagnosis -->
+        <div class="result-card">
+            <div class="card-header diagnosis-header">
+                <span class="icon">&#x1FA7A;</span> Differential Diagnosis
+            </div>
+            <div class="card-body">
+                <div class="diagnosis-content" id="diagnosisContent"></div>
+            </div>
+        </div>
+
+        <!-- PubMed Evidence -->
+        <div class="result-card">
+            <div class="card-header pubmed-header">
+                <span class="icon">&#x1F4DA;</span> PubMed Evidence
+            </div>
+            <div class="card-body" id="pubmedArticles"></div>
+        </div>
+
+        <!-- Research Summary -->
+        <div class="result-card">
+            <div class="card-header summary-header">
+                <span class="icon">&#x1F4DD;</span> Research Summary
+            </div>
+            <div class="card-body">
+                <div class="summary-content" id="summaryContent"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<footer>
+    CliniSight AI &mdash; For educational and research purposes only. Not a substitute for professional medical advice.
+</footer>
+
+<script>
+    const STEPS = [
+        { pct: 10,  text: "Extracting symptoms..." },
+        { pct: 30,  text: "Running differential diagnosis..." },
+        { pct: 55,  text: "Searching PubMed for evidence..." },
+        { pct: 75,  text: "Summarizing research articles..." },
+        { pct: 90,  text: "Compiling results..." },
+        { pct: 100, text: "Done!" }
+    ];
+
+    function setProgress(step) {
+        const fill = document.getElementById('progressFill');
+        const text = document.getElementById('progressText');
+        fill.style.width = step.pct + '%';
+        text.textContent = step.text;
+    }
+
+    async function submitDiagnosis() {
+        const input = document.getElementById('symptomInput').value.trim();
+        if (!input) {
+            showError('Please enter a symptom description.');
+            return;
+        }
+
+        // Reset UI
+        hideError();
+        document.getElementById('results').classList.remove('visible');
+        const btn = document.getElementById('submitBtn');
+        btn.classList.add('loading');
+        btn.disabled = true;
+
+        const prog = document.getElementById('progressContainer');
+        prog.classList.add('active');
+        setProgress(STEPS[0]);
+
+        // Simulate progress while waiting for API
+        let stepIdx = 0;
+        const progressInterval = setInterval(() => {
+            if (stepIdx < STEPS.length - 2) {
+                stepIdx++;
+                setProgress(STEPS[stepIdx]);
+            }
+        }, 4000);
+
+        try {
+            const response = await fetch('/diagnosis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: input })
+            });
+
+            clearInterval(progressInterval);
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || `Server error (${response.status})`);
+            }
+
+            const data = await response.json();
+
+            setProgress(STEPS[STEPS.length - 2]);
+            await sleep(300);
+            setProgress(STEPS[STEPS.length - 1]);
+
+            renderResults(data);
+
+        } catch (err) {
+            clearInterval(progressInterval);
+            showError('Analysis failed: ' + err.message);
+        } finally {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            setTimeout(() => prog.classList.remove('active'), 1500);
+        }
+    }
+
+    function renderResults(data) {
+        // ── Symptoms ─────────────────────────────────
+        const pillsEl = document.getElementById('symptomPills');
+        pillsEl.innerHTML = '';
+        if (data.symptom && data.symptom.length) {
+            data.symptom.forEach(s => {
+                const span = document.createElement('span');
+                span.className = 'pill';
+                span.textContent = s;
+                pillsEl.appendChild(span);
+            });
+        } else {
+            pillsEl.innerHTML = '<p class="no-data">No symptoms extracted</p>';
+        }
+
+        // ── Diagnosis ────────────────────────────────
+        const diagEl = document.getElementById('diagnosisContent');
+        diagEl.innerHTML = formatText(data.diagnosis || 'No diagnosis available.');
+
+        // ── PubMed Articles ──────────────────────────
+        const articlesEl = document.getElementById('pubmedArticles');
+        articlesEl.innerHTML = '';
+        if (data.pubmed_articles && data.pubmed_articles.length) {
+            data.pubmed_articles.forEach((art, i) => {
+                const div = document.createElement('div');
+                div.className = 'article-item';
+
+                const url = art.article_url || art.url || (art.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${art.pmid}/` : '#');
+                const title = escapeHtml(art.title || 'Untitled');
+                const authors = escapeHtml(art.authors || 'Unknown authors');
+                const journal = art.journal ? escapeHtml(art.journal) : '';
+                const date = art.publication_date ? escapeHtml(art.publication_date) : '';
+                const abstract = art.abstract || 'No abstract available.';
+                const absId = 'abs-' + i;
+
+                div.innerHTML = `
+                    <a class="article-title" href="${url}" target="_blank" rel="noopener">${title}</a>
+                    <div class="article-meta">
+                        <span>&#x1F464; ${authors}</span>
+                        ${journal ? '<span>&#x1F4D6; ' + journal + '</span>' : ''}
+                        ${date ? '<span>&#x1F4C5; ' + date + '</span>' : ''}
+                    </div>
+                    <div class="article-abstract collapsed" id="${absId}">${escapeHtml(abstract)}</div>
+                    <button class="toggle-abstract" onclick="toggleAbstract('${absId}', this)">Show more</button>
+                `;
+                articlesEl.appendChild(div);
+            });
+        } else {
+            articlesEl.innerHTML = '<p class="no-data">No PubMed articles found</p>';
+        }
+
+        // ── Summary ──────────────────────────────────
+        const sumEl = document.getElementById('summaryContent');
+        sumEl.innerHTML = formatText(data.pubmed_summary || 'No summary available.');
+
+        // Show results
+        document.getElementById('results').classList.add('visible');
+
+        // Scroll to results
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleAbstract(id, btn) {
+        const el = document.getElementById(id);
+        if (el.classList.contains('collapsed')) {
+            el.classList.remove('collapsed');
+            btn.textContent = 'Show less';
+        } else {
+            el.classList.add('collapsed');
+            btn.textContent = 'Show more';
+        }
+    }
+
+    function formatText(text) {
+        // Convert markdown-like patterns to HTML
+        let html = escapeHtml(text);
+        // Bold: **text** or __text__
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        // Headings: lines starting with ### or ##
+        html = html.replace(/^### (.+)$/gm, '<strong style="font-size:1rem;display:block;margin-top:12px;">$1</strong>');
+        html = html.replace(/^## (.+)$/gm, '<strong style="font-size:1.05rem;display:block;margin-top:16px;color:#1a73e8;">$1</strong>');
+        // Bullet points
+        html = html.replace(/^[-•] (.+)$/gm, '&nbsp;&nbsp;&#x2022; $1');
+        // Numbered lists (already fine in pre-wrap)
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+        return html;
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorBanner');
+        el.textContent = msg;
+        el.classList.add('visible');
+    }
+    function hideError() {
+        document.getElementById('errorBanner').classList.remove('visible');
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // Submit on Ctrl+Enter
+    document.getElementById('symptomInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            submitDiagnosis();
+        }
+    });
+</script>
+
+</body>
+</html>
