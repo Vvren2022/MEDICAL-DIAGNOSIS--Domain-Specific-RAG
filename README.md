@@ -1,3 +1,5 @@
+<img width="1521" height="630" alt="image" src="https://github.com/user-attachments/assets/6865126b-0328-41f8-ab55-f1d23b456005" />
+
 # MEDICAL-DIAGNOSIS--Domain-Specific-RAG
 
 CliniSight AI is a domain-specific medical diagnosis assistant focused on high-accuracy, evidence-backed outputs.
